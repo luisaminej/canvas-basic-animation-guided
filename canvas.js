@@ -16,7 +16,12 @@ const myGameArea = {
             },
     clear: function () {
                 this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
-            }
+            },
+    stop:  function () {
+                clearInterval(this.interval)
+        
+    }
+    
 }
 
 class Component {
@@ -37,19 +42,23 @@ class Component {
         ctx.fillRect(this.x, this.y, this.width, this.height)
     }
 
-    left(){
+    left() {
+        return this.x
 
     }
 
-    right(){
+    right() {
+        return this.x + this.width
 
     }
 
-    top(){
+    top() {
+        return this.y
 
     }
 
-    bottom(){
+    bottom() {
+        return this.y + this.height
 
     }
 
@@ -58,8 +67,13 @@ class Component {
         this.y += this.speedY
     }
 
-    crashWith(){
-
+    crashWith(obstacle){
+        return !(
+            this.bottom() < obstacle.top() ||
+            this.top() > obstacle.bottom() ||
+            this.right() < obstacle.left() ||
+            this.left() > obstacle.right()
+        )
     }
 
 }
@@ -69,12 +83,42 @@ function updateGameArea() {
     myGameArea.clear()
     player.newPos()
     player.update()
+    updateObstacles()
+    checkGameOver()
+}
+
+function updateObstacles() {
+    for(i = 0; i < myObstacles.length; i++) {
+        myObstacles[i].x += -1
+        myObstacles[i].update()
+    }
+    myGameArea.frames += 1
+   
+    if(myGameArea.frames % 120 === 0) {
+        let canvasWidth = myGameArea.canvas.width
+        let height = 100
+        let gap = 80
+        myObstacles.push(new Component(10, height, "green", 
+        canvasWidth, 0))
+        myObstacles.push(new Component(10, myGameArea.canvas.height - height - gap, "green", canvasWidth, height + gap))
+    }
+}
+
+function checkGameOver() {
+    const crashed = myObstacles.some((obstacle) => {
+        return player.crashWith(obstacle)
+    })
+    if(crashed) {
+        myGameArea.stop()
+        console.log("Game Over")
+    }
+
 }
 
 //EVENTOS
 const player = new Component(30, 30, "pink", 0, 110)
 
-
+const myObstacles = []
 
 myGameArea.start()
 
@@ -96,6 +140,7 @@ document.addEventListener("keydown",(e) => {
         default:
             return
     }
+    
 })
 
 document.addEventListener("keyup", () => {
@@ -104,3 +149,4 @@ document.addEventListener("keyup", () => {
     player.speedY = 0
     
 })
+
